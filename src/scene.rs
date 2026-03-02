@@ -2,8 +2,8 @@ use std::fs::File;
 use std::io::Read;
 use std::collections::HashSet;
 use serde::{Serialize, Deserialize};
-use crate::commands::ParseError;
-use crate::{GameCommand,InventoryCommand,StatusCommand,ChooseCommand,LookCommand,QuitCommand};
+use crate::project_error::ParseError;
+use crate::commands::{GameCommand,InventoryCommand,StatusCommand,ChooseCommand,LookCommand,QuitCommand};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct Story{
@@ -41,7 +41,7 @@ pub struct Choice{
 }
 
 impl Story{
-    pub fn deserialyze_yaml_to_story(filename: &str) ->  Result<Story,serde_yaml::Error> {
+    pub fn deserialyze_yaml_to_story(filename: &str) ->  Result<Story,serde_yaml::Error> { // fichier yaml -> scénario
         let mut file:File = File::open(filename).expect("File not found");
         let mut story_string:String = String::new();
         file.read_to_string(&mut story_string).expect("Can't read file");
@@ -49,7 +49,7 @@ impl Story{
         Ok(story)
     }
     
-    pub fn validate_story(story: &Story) -> Result<(), String> {
+    pub fn validate_story(story: &Story) -> Result<(), String> { //valide la bonne formation de notre scénario
         let mut scene_ids = HashSet::new();
         for scene in &story.scenes {
             if !scene_ids.insert(&scene.id) {
@@ -78,7 +78,7 @@ impl Story{
         Ok(())
     }
 
-    pub fn parse_command(line: &str) -> Result<Box<dyn GameCommand>, ParseError> {
+    pub fn parse_command(line: &str) -> Result<Box<dyn GameCommand>, ParseError> { // redirection de l'entrée utilisateur
         let parts: Vec<&str> = line.trim().split_whitespace().collect();
         if parts.is_empty() {
             return Err(ParseError::EmptyInput);
@@ -90,10 +90,13 @@ impl Story{
                 Ok(Box::new(LookCommand))
             },
             "choose" => {
-                if args.is_empty() {
-                    Err(ParseError::MissingArgument("Où voulez-vous aller ?".to_string()))
+                if let Some(arg) = args.first() {
+                    match arg.parse::<usize>() {
+                        Ok(num) => Ok(Box::new(ChooseCommand { index: num })),
+                        Err(_) => Err(ParseError::UnknownCommand("Veuillez entrer un numéro valide (ex: choose 1)".to_string())),
+                    }
                 } else {
-                    Ok(Box::new(ChooseCommand { destination: args.join(" ") }))
+                    Err(ParseError::MissingArgument("Usage: choose <numéro>".to_string()))
                 }
             },
             "inventory" => {

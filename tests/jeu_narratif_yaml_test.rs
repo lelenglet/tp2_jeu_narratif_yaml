@@ -41,7 +41,7 @@ mod tests {
             inventory: vec![],
         };
 
-        let cmd = ChooseCommand { destination: "Sortie".to_string() };
+        let cmd = ChooseCommand { index: 1 };
         let result = cmd.execute(&mut story, &mut state);
 
         assert!(result.is_ok());
@@ -57,7 +57,7 @@ mod tests {
             inventory: vec![],
         };
 
-        let cmd = ChooseCommand { destination: "Porte Verrouillée".to_string() };
+        let cmd = ChooseCommand { index: 3 };
         let result = cmd.execute(&mut story, &mut state);
 
         match result {
@@ -76,7 +76,7 @@ mod tests {
         };
 
         // Le choix index 3 requiert une "clé"
-        let cmd = ChooseCommand { destination: "Porte Verrouillée".to_string()  };
+        let cmd = ChooseCommand { index: 3  };
         let result = cmd.execute(&mut story, &mut state);
 
         match result {
@@ -95,12 +95,29 @@ mod tests {
         };
 
         // On va vers la scène "death" (hp_delta: -20)
-        let cmd = ChooseCommand { destination: "Piège".to_string() };
+        let cmd = ChooseCommand { index: 2 };
         let _ = cmd.execute(&mut story, &mut state);
 
         assert_eq!(state.current_scene_id, "death");
     }
 
+    #[test]
+    fn test_invalid_choice_index_bound() {
+        let mut story = setup_test_story();
+        let mut state = GameState {
+            current_scene_id: "start".to_string(),
+            current_hp: 10,
+            inventory: vec![],
+        };
+
+        let cmd = ChooseCommand { index: 99 };
+        let result = cmd.execute(&mut story, &mut state);
+
+        match result {
+            Err(GameError::InvalidChoice(_)) => assert!(true),
+            _ => panic!("Devrait retourner InvalidChoice"),
+        }
+    }
     #[test]
     fn test_invalid_yaml_validation() {
         let yaml = r#"

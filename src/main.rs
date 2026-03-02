@@ -45,7 +45,6 @@ fn main() {
             Err(e) => println!("Commande inconnue ou incomplète : {:?}", e),
         }
 
-        // Condition de défaite
         if state.current_hp <= 0 {
             println!("\n--- GAME OVER ---");
             break;
